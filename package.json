@@ -4,5 +4,9 @@
   "description": "My first mini wallet",
   "main": "index.ts",
   "author": "SeongChan Lee",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3"
+  }
 }
