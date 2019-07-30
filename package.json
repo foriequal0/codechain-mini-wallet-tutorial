@@ -1,0 +1,8 @@
+{
+  "name": "mini-wallet",
+  "version": "1.0.0",
+  "description": "My first mini wallet",
+  "main": "index.ts",
+  "author": "SeongChan Lee",
+  "license": "MIT"
+}
