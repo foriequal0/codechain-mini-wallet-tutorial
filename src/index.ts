@@ -2,6 +2,7 @@ import * as process from "process";
 
 import { SDK } from "codechain-sdk";
 
+import account from "./commands/account";
 import hello from "./commands/hello";
 import init from "./commands/init";
 import { Tracer } from "./tracer";
@@ -27,6 +28,9 @@ async function asyncMain() {
       break;
     case "init":
       await init(sdk, tracer);
+      break;
+    case "account":
+      await account(sdk, tracer, args);
       break;
     default:
       throw new Error(`Invalid command ${command}`);
