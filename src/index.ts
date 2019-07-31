@@ -6,6 +6,7 @@ import account from "./commands/account";
 import hello from "./commands/hello";
 import init from "./commands/init";
 import sendCCC from "./commands/sendCCC";
+import watch from "./commands/watch";
 import { Tracer } from "./tracer";
 
 async function asyncMain() {
@@ -35,6 +36,9 @@ async function asyncMain() {
       break;
     case "sendCCC":
       await sendCCC(sdk, tracer, args);
+      break;
+    case "watch":
+      await watch(sdk, args);
       break;
     default:
       throw new Error(`Invalid command ${command}`);
