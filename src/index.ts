@@ -3,6 +3,7 @@ import * as process from "process";
 import { SDK } from "codechain-sdk";
 
 import hello from "./commands/hello";
+import init from "./commands/init";
 import { Tracer } from "./tracer";
 
 async function asyncMain() {
@@ -14,11 +15,18 @@ async function asyncMain() {
   const sdk = new SDK({
     server: "https://corgi-rpc.codechain.io",
     networkId: "wc",
+    keyStoreType: {
+      type: "local",
+      path: "./keystore.db",
+    },
   });
 
   switch (command) {
     case "hello":
       await hello(sdk, tracer, args);
+      break;
+    case "init":
+      await init(sdk, tracer);
       break;
     default:
       throw new Error(`Invalid command ${command}`);
