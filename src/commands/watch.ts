@@ -7,6 +7,8 @@ import {
   PlatformAddress,
   U64,
   Asset,
+  TransferAsset,
+  AssetOutPoint,
 } from "codechain-sdk/lib/core/classes";
 
 import { P2PKH } from "codechain-sdk/lib/key/P2PKH";
@@ -87,6 +89,25 @@ export default async function watch(sdk: SDK, tracer: Tracer, args: string[]) {
         console.log("AssetType:", asset.assetType.toString());
         console.log("Quantity:", asset.quantity.toLocaleString());
         console.groupEnd();
+      } else if (tx.unsigned.type() == "transferAsset") {
+        const unsigned = tx.unsigned as TransferAsset;
+        for (const { prevOut } of unsigned.inputs()) {
+          if (tryRemoveAsset(tracer, prevOut)) {
+            console.group("Asset is spent:", prevOut.assetType.toString());
+            console.log("AssetType:", prevOut.assetType.toString());
+            console.log("Quantity:", prevOut.quantity.toLocaleString());
+            console.log("Tracker:", prevOut.tracker.toString());
+            console.log("Index:", prevOut.index);
+            console.groupEnd();
+          }
+        }
+        for (const asset of unsigned.getTransferredAssets()) {
+          if (isAssetMine(sdk, asset, myAssetAddress)) {
+            console.log("Transferred to me");
+            tracer.state.assets.push(asset);
+          }
+        }
+        console.log("Transaction", "transferAsset", tx.hash().toString());
       } else {
         console.log("Transaction", tx.unsigned.type(), tx.hash().toString());
       }
@@ -115,6 +136,21 @@ function isAssetMine(sdk: SDK, asset: Asset, myAssetAddress: AssetAddress) {
     }
   }
   return false;
+}
+
+function tryRemoveAsset(tracer: Tracer, toRemove: AssetOutPoint) {
+  const foundIndex = tracer.state.assets.findIndex(
+    asset =>
+      asset.outPoint.tracker.toString() === toRemove.tracker.toString() &&
+      asset.outPoint.index === toRemove.index,
+  );
+  if (foundIndex == -1) {
+    return false;
+  }
+  tracer.state.assets = tracer.state.assets.filter(
+    (_, index) => index !== foundIndex,
+  );
+  return true;
 }
 
 async function eventallyGetBlock(

@@ -7,6 +7,7 @@ import hello from "./commands/hello";
 import init from "./commands/init";
 import mintAsset from "./commands/mintAsset";
 import sendCCC from "./commands/sendCCC";
+import transferAsset from "./commands/transferAsset";
 import watch from "./commands/watch";
 import { Tracer } from "./tracer";
 
@@ -43,6 +44,9 @@ async function asyncMain() {
       break;
     case "mintAsset":
       await mintAsset(sdk, tracer, args);
+      break;
+    case "transferAsset":
+      await transferAsset(sdk, tracer, args);
       break;
     default:
       throw new Error(`Invalid command ${command}`);
