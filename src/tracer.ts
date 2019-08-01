@@ -19,6 +19,13 @@ export class Tracer {
     this.state = state;
   }
 
+  public getAccounts() {
+    if (this.state.addresses === undefined) {
+      throw new Error("You should've run 'init'");
+    }
+    return this.state.addresses;
+  }
+
   public static load(): Tracer {
     let obj: { [key in keyof State]?: any };
     try {

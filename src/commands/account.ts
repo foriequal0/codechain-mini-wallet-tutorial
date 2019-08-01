@@ -9,10 +9,7 @@ export default async function account(
   args: string[],
 ) {
   if (args.length === 0) {
-    if (tracer.state.addresses === undefined) {
-      throw new Error("You should've run 'init'");
-    }
-    const platform = tracer.state.addresses.platform;
+    const platform = tracer.getAccounts().platform;
     const ccc = await sdk.rpc.chain.getBalance(platform);
 
     console.log("Your platform address:", platform.toString());
