@@ -1,17 +1,22 @@
 import { SDK } from "codechain-sdk";
 import { Block, PlatformAddress, U64 } from "codechain-sdk/lib/core/classes";
 
+import { Tracer } from "../tracer";
 import { sleep } from "../util";
 
-export default async function watch(sdk: SDK, args: string[]) {
+export default async function watch(sdk: SDK, tracer: Tracer, args: string[]) {
+  const { platform } = tracer.getAccounts();
+
   let from: number;
   if (args.length > 0) {
     from = parseInt(args[0], 10);
     if (isNaN(from)) {
       throw new Error("Invalid block number");
     }
-  } else {
+  } else if (tracer.state.lastWatch === undefined) {
     from = await sdk.rpc.chain.getBestBlockNumber();
+  } else {
+    from = tracer.state.lastWatch + 1;
   }
 
   for (let blockNumber = from; ; blockNumber++) {
@@ -19,13 +24,39 @@ export default async function watch(sdk: SDK, args: string[]) {
     console.group("Block", blockNumber, block.hash.toString());
 
     for (const tx of block.transactions) {
+      const sender = tx.getSignerAddress({ networkId: sdk.networkId });
+      if (sender.toString() === platform.toString()) {
+        tracer.state.payLogs.push({
+          type: "fee",
+          quantity: tx.unsigned.fee()!,
+          txHash: tx.hash(),
+        });
+      }
+
       if (tx.unsigned.type() === "pay") {
-        const sender = tx.getSignerAddress({ networkId: sdk.networkId });
         const {
           receiver,
           quantity,
         }: { receiver: PlatformAddress; quantity: U64 } = tx.unsigned as any;
 
+        if (sender.toString() === platform.toString()) {
+          console.log("Pay transaction from me");
+          tracer.state.payLogs.push({
+            type: "send",
+            receiver,
+            quantity,
+            txHash: tx.hash(),
+          });
+        }
+        if (receiver.toString() === platform.toString()) {
+          console.log("Pay transaction to me");
+          tracer.state.payLogs.push({
+            type: "receive",
+            sender,
+            quantity,
+            txHash: tx.hash(),
+          });
+        }
         console.group("Transaction", "pay", tx.hash().toString());
         console.log("Sender:", sender.toString());
         console.log("Receiver:", receiver.toString());
@@ -36,6 +67,9 @@ export default async function watch(sdk: SDK, args: string[]) {
       }
     }
     console.groupEnd();
+
+    tracer.state.lastWatch = blockNumber;
+    tracer.save();
   }
 }
 

@@ -38,7 +38,7 @@ async function asyncMain() {
       await sendCCC(sdk, tracer, args);
       break;
     case "watch":
-      await watch(sdk, args);
+      await watch(sdk, tracer, args);
       break;
     default:
       throw new Error(`Invalid command ${command}`);
