@@ -6,6 +6,7 @@ import {
   PlatformAddress,
   U64,
 } from "codechain-primitives/lib";
+import { Asset } from "codechain-sdk/lib/core/Asset";
 
 const SAVE_FILE = "./state.json";
 
@@ -17,6 +18,7 @@ export type State = {
   };
   lastWatch?: number;
   payLogs: PayLog[];
+  assets: Asset[];
 };
 
 export type PayLog =
@@ -96,12 +98,19 @@ export class Tracer {
         }
       }
     }
+    const assets: Asset[] = [];
+    if (obj.assets) {
+      for (const asset of obj.assets) {
+        assets.push(Asset.fromJSON(asset));
+      }
+    }
 
     return new Tracer({
       nickname,
       addresses,
       lastWatch,
       payLogs,
+      assets,
     });
   }
 
@@ -139,6 +148,7 @@ export class Tracer {
           };
         }
       }),
+      assets: this.state.assets.map(asset => asset.toJSON()),
     };
     const json = JSON.stringify(obj, null, 4);
     fs.writeFileSync(SAVE_FILE, json, "utf-8");

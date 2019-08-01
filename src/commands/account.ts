@@ -9,7 +9,7 @@ export default async function account(
   args: string[],
 ) {
   if (args.length === 0) {
-    const platform = tracer.getAccounts().platform;
+    const { platform, asset: assetAddress } = tracer.getAccounts();
     const ccc = await sdk.rpc.chain.getBalance(platform);
 
     console.log("Your platform address:", platform.toString());
@@ -34,6 +34,16 @@ export default async function account(
         console.log("TxHash:", log.txHash.toString());
         console.groupEnd();
       }
+    }
+    console.groupEnd();
+
+    console.group("Your Asset address:", assetAddress.toString());
+    for (const asset of tracer.state.assets) {
+      console.group("AssetType:", asset.assetType.toString());
+      console.log("Quantity:", asset.quantity.toLocaleString());
+      console.log("Tracker:", asset.outPoint.tracker.toString());
+      console.log("Index:", asset.outPoint.index);
+      console.groupEnd();
     }
     console.groupEnd();
   } else {

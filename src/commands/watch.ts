@@ -1,11 +1,20 @@
 import { SDK } from "codechain-sdk";
-import { Block, PlatformAddress, U64 } from "codechain-sdk/lib/core/classes";
+import {
+  AssetAddress,
+  Block,
+  H160,
+  MintAsset,
+  PlatformAddress,
+  U64,
+  Asset,
+} from "codechain-sdk/lib/core/classes";
 
+import { P2PKH } from "codechain-sdk/lib/key/P2PKH";
 import { Tracer } from "../tracer";
 import { sleep } from "../util";
 
 export default async function watch(sdk: SDK, tracer: Tracer, args: string[]) {
-  const { platform } = tracer.getAccounts();
+  const { platform, asset: myAssetAddress } = tracer.getAccounts();
 
   let from: number;
   if (args.length > 0) {
@@ -62,6 +71,22 @@ export default async function watch(sdk: SDK, tracer: Tracer, args: string[]) {
         console.log("Receiver:", receiver.toString());
         console.log("Quantity:", quantity.toLocaleString());
         console.groupEnd();
+      } else if (tx.unsigned.type() === "mintAsset") {
+        const unsigned = tx.unsigned as MintAsset;
+        const asset = unsigned.getMintedAsset();
+        if (isAssetMine(sdk, asset, myAssetAddress)) {
+          console.log("MintAsset by me");
+          tracer.state.assets.push(asset);
+        }
+        console.group("Transaction", "mintAsset", tx.hash().toString());
+        console.log(
+          "Tracker:",
+          asset.outPoint.tracker.toString(),
+          asset.outPoint.index,
+        );
+        console.log("AssetType:", asset.assetType.toString());
+        console.log("Quantity:", asset.quantity.toLocaleString());
+        console.groupEnd();
       } else {
         console.log("Transaction", tx.unsigned.type(), tx.hash().toString());
       }
@@ -71,6 +96,25 @@ export default async function watch(sdk: SDK, tracer: Tracer, args: string[]) {
     tracer.state.lastWatch = blockNumber;
     tracer.save();
   }
+}
+
+function isAssetMine(sdk: SDK, asset: Asset, myAssetAddress: AssetAddress) {
+  const assetJSON = asset.toJSON();
+  if (
+    asset.lockScriptHash.toString() === P2PKH.getLockScriptHash().toString() &&
+    assetJSON.parameters.length === 1 &&
+    H160.check(assetJSON.parameters[0])
+  ) {
+    const assetAddress = AssetAddress.fromTypeAndPayload(
+      1,
+      H160.ensure(assetJSON.parameters[0]),
+      { networkId: sdk.networkId },
+    );
+    if (assetAddress.toString() === myAssetAddress.toString()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 async function eventallyGetBlock(
